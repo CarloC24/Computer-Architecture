@@ -6,7 +6,7 @@
  */
 int main(void)
 {
-  struct cpu cpu;
+  cpu cpu;
 
   cpu_init(&cpu);
   cpu_load(&cpu);
