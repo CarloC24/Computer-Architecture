@@ -2,7 +2,7 @@
 #define _CPU_H_
 
 // Holds all information about the CPU
-typedef struct cpu
+struct cpu
 {
   // TODO
   // PC
@@ -11,7 +11,7 @@ typedef struct cpu
   unsigned char reg[8];
   // ram (array)
   unsigned char ram[255];
-} cpu;
+};
 
 // ALU operations
 enum alu_op
@@ -32,7 +32,7 @@ enum alu_op
 
 // Function declarations
 
-extern void cpu_load(struct cpu *cpu);
+extern void cpu_load(struct cpu *cpu, int argc, char *argv[]);
 extern void cpu_init(struct cpu *cpu);
 extern void cpu_run(struct cpu *cpu);
 
