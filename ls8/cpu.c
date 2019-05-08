@@ -4,6 +4,7 @@
 #include <string.h>
 
 #define DATA_LEN 6
+#define SP 7
 
 /**
  * Load the binary bytes from a .ls8 source file into a RAM array
@@ -18,34 +19,39 @@ unsigned char cpu_ram_read(struct cpu *cpu, unsigned char address)
   return cpu->ram[address];
 }
 
-void cpu_load(struct cpu *cpu, int num_args, char *argv[])
+void cpu_load(struct cpu *cpu, int argc, char *argv[])
 // #define LDI 0b10000010
 // #define HLT 0b00000001
 // #define PRN 0b01000111
 {
 
-  // char line[1024];
+  char line[1024];
+  int address = 0;
 
-  // if (num_args < 2)
-  // {
-  //   fprintf(stderr, "file does not exist \n");
-  //   exit(1);
-  // }
-  // char *file_to_be_read = argv[1];
-  // FILE *fp = fopen(file_to_be_read, "r");
-  // if (fp == NULL)
-  // {
-  //   printf("No file read with the argument provided \n");
-  //   exit(1);
-  // }
+  if (argc < 2)
+  {
+    fprintf(stderr, "file does not exist \n");
+    exit(1);
+  }
+  char *file_to_be_read = argv[1];
+  printf("%s  file to be read \n", file_to_be_read);
+  FILE *fp = fopen(file_to_be_read, "r");
+  if (fp == NULL)
+  {
+    printf("No file read with the argument provided \n");
+    exit(1);
+  }
 
-  // while (fgets(line, 1024, fp) != NULL)
-  // {
-  //   char *endptr;
-  //   unsigned char str_value;
-  //   str_value = stroul(line, &endptr, 2);
-  //   printf("%s  this is the str value\n", str_value);
-  // }
+  while (fgets(line, 1024, fp) != NULL)
+  {
+    char *endptr;
+    unsigned char str_value;
+    str_value = strtol(line, &endptr, 2);
+    // printf("%c  this is the str value\n", str_value);
+    cpu->ram[address] = str_value;
+    address++;
+  }
+  fclose(fp);
 }
 
 //TODO OPEN FILE
@@ -71,17 +77,21 @@ void cpu_load(struct cpu *cpu, int num_args, char *argv[])
 /**
  * ALU
  */
-// void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB)
-// {
-//   switch (op)
-//   {
-//   case ALU_MUL:
-//     // TODO
-//     break;
-
-//     // TODO: implement more ALU ops
-//   }
-// }
+void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB)
+{
+  switch (op)
+  {
+  case ALU_MUL:
+    // TODO
+    printf("MULTIPLYING \n");
+    cpu->reg[regA] *= cpu->reg[regB];
+    break;
+  default:
+    printf("Cant read your ALU instruction \n");
+    break;
+    // TODO: implement more ALU ops
+  }
+}
 
 /**
  * Run the CPU
@@ -100,20 +110,54 @@ void cpu_run(struct cpu *cpu)
     // 2. Figure out how many operands this next instruction requires
     Instruction = cpu_ram_read(cpu, Counter); // READ INSTRUCTIONS FROM RAM
     // 3. Get the appropriate value(s) of the operands following this instruction
+    unsigned int num_operands = Instruction >> 6;
+    unsigned int pc_to_be_added = num_operands + 1;
     // GET OPERANDS/ARGUMENTS
+    // OPERANDS CANNOT EXCEED 255 bits
+    printf("NUM OPERANDS  %u \n", num_operands);
+    printf("PC NUM  %u \n", cpu->PC);
+    unsigned char operandA = cpu_ram_read(cpu, (cpu->PC + 1) & 0xff);
+    unsigned char operandB = cpu_ram_read(cpu, (cpu->PC + 2) & 0xff);
+    // printf("REGISTER %c \n", cpu->reg[operandA]);
     // 4. switch() over it to decide on a course of action.
+    // 5. Do whatever the instruction should do according to the spec.
     switch (Instruction)
     {
     case HLT:
       running = 0;
       printf("HALT!! \n\n");
       break;
+    case PRN:
+      printf("Should be printing the argument %d \n", cpu->reg[operandA]);
+      break;
+    case LDI:
+      printf("In the LDI func \n ");
+      cpu->reg[operandA] = operandB;
+      break;
+    case ADD:
+      break;
+    case MUL:
+      printf("Multiply instruction \n");
+      alu(cpu, ALU_MUL, operandA, operandB);
+      break;
+    case POP:
+      cpu->reg[operandA] = cpu->ram[cpu->reg[SP]];
+      cpu->reg[SP]++;
+      break;
+    case PUSH:
+      cpu->reg[SP]--;
+      cpu_ram_write(cpu, cpu->reg[SP], cpu->reg[operandA]);
+      break;
     default:
-      printf("Cannot read instructions");
-      cpu->PC++;
+      break;
     }
-    // 5. Do whatever the instruction should do according to the spec.
     // 6. Move the PC to the next instruction.
+    cpu->PC += pc_to_be_added;
+  }
+  //TEST for PUSH/POP
+  for (int i = 0; i < 7; i++)
+  {
+    printf("REGISTER %c \n", cpu->ram[cpu->reg[SP]]);
   }
 }
 
@@ -123,7 +167,8 @@ void cpu_run(struct cpu *cpu)
 void cpu_init(struct cpu *cpu)
 {
   cpu->PC = 0;
-  memset(cpu->ram, 0, sizeof(cpu->ram));
   memset(cpu->reg, 0, sizeof(cpu->reg));
+  memset(cpu->ram, 0, sizeof(cpu->ram));
+  printf("initialized cpu \n");
   // TODO: Initialize the PC and other special registers
 }
