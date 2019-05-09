@@ -114,11 +114,10 @@ void cpu_run(struct cpu *cpu)
     unsigned int pc_to_be_added = num_operands + 1;
     // GET OPERANDS/ARGUMENTS
     // OPERANDS CANNOT EXCEED 255 bits
-    printf("NUM OPERANDS  %u \n", num_operands);
-    printf("PC NUM  %u \n", cpu->PC);
+    // printf("NUM OPERANDS  %u \n", num_operands);
+    // printf("PC NUM  %u \n", cpu->PC);
     unsigned char operandA = cpu_ram_read(cpu, (cpu->PC + 1) & 0xff);
     unsigned char operandB = cpu_ram_read(cpu, (cpu->PC + 2) & 0xff);
-    // printf("REGISTER %c \n", cpu->reg[operandA]);
     // 4. switch() over it to decide on a course of action.
     // 5. Do whatever the instruction should do according to the spec.
     switch (Instruction)
@@ -131,13 +130,13 @@ void cpu_run(struct cpu *cpu)
       printf("Should be printing the argument %d \n", cpu->reg[operandA]);
       break;
     case LDI:
-      printf("In the LDI func \n ");
+      // printf("In the LDI func \n ");
       cpu->reg[operandA] = operandB;
       break;
     case ADD:
       break;
     case MUL:
-      printf("Multiply instruction \n");
+      // printf("Multiply instruction \n");
       alu(cpu, ALU_MUL, operandA, operandB);
       break;
     case POP:
@@ -148,17 +147,37 @@ void cpu_run(struct cpu *cpu)
       cpu->reg[SP]--;
       cpu_ram_write(cpu, cpu->reg[SP], cpu->reg[operandA]);
       break;
+    case CALL:
+      printf("inside call statement \n");
+      //PUSH OUR SYS CALL IN THE STACK
+      // PUSH THE CALL FUNCTION IN THE CURRENT STACK ADDRESS
+      // TO BE EXECUTED BEFORE ANYTHING ELSE
+      cpu->reg[SP]--;
+      cpu_ram_write(cpu, cpu->reg[SP], cpu->PC + 1);
+      // LETS EXECUTE PROCESS THE ON THE GIVEN REGISTER
+      cpu->PC = cpu->reg[operandA] - 1;
+      printf("%d is the PC after the CALL statement \n \n", cpu->PC);
+      break;
+    case RET:
+      printf("inside ret statement \n");
+      // RETURN TO THE SAVED WORK BY POPPING
+      cpu->PC = cpu->ram[cpu->reg[SP]];
+      //INCREMENT STACK POINTER
+      cpu->reg[SP]++;
+      break;
     default:
+      printf("CANNOT READ INSTRUCTION!! \n");
       break;
     }
+    // printf("REGISTER %c \n", cpu->ram[cpu->reg[SP]]);
     // 6. Move the PC to the next instruction.
     cpu->PC += pc_to_be_added;
   }
   //TEST for PUSH/POP
-  for (int i = 0; i < 7; i++)
-  {
-    printf("REGISTER %c \n", cpu->ram[cpu->reg[SP]]);
-  }
+  // for (int i = 0; i < 7; i++)
+  // {
+  //   printf("REGISTER %c \n", cpu->ram[cpu->reg[SP]]);
+  // }
 }
 
 /**
